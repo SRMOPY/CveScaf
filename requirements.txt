@@ -1,0 +1,6 @@
+# CVE Scaffolder — Dependencies
+# Install all with: pip install -r requirements.txt
+
+requests==2.31.0   # HTTP requests to NVD API
+typer==0.12.3      # CLI framework
+rich==13.7.1       # Beautiful terminal output
