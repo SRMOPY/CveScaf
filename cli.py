@@ -8,6 +8,8 @@ Usage:
     python cli.py lookup CVE-2021-44228
     python cli.py lookup CVE-2017-0144 --hints
     python cli.py list-cves
+    python cli.py history
+    python cli.py note CVE-2021-44228 "my note here"
     python cli.py --help
 
 Requirements:
@@ -23,17 +25,21 @@ from rich import box
 
 # Our own modules
 from fetcher import fetch_cve
+from db import init_db, save_cve, get_history, get_stats, add_note
 
-# ── App setup ────────────────────────────────────────────────────────────────
+# Initialize database on startup
+init_db()
 
-app     = typer.Typer(
-    name            = "cvescaffold",
-    help            = "CVE-to-Lab Scaffolder — Look up CVEs and build your attack lab.",
-    add_completion  = False,
+# ── App setup ─────────────────────────────────────────────────────────────────
+
+app = typer.Typer(
+    name           = "cvescaffold",
+    help           = "CVE-to-Lab Scaffolder — Look up CVEs and build your attack lab.",
+    add_completion = False,
 )
 console = Console()
 
-# ── Severity color map (for rich) ────────────────────────────────────────────
+# ── Severity color map ────────────────────────────────────────────────────────
 
 SEVERITY_COLORS = {
     "CRITICAL": "bold red",
@@ -43,60 +49,54 @@ SEVERITY_COLORS = {
     "UNKNOWN":  "dim",
 }
 
-# ── A few example CVEs to show in list-cves ──────────────────────────────────
+# ── Known CVEs for list-cves command ──────────────────────────────────────────
 
 KNOWN_CVES = [
-    ("CVE-2021-44228", "Log4Shell",    "Apache Log4j2",  "CRITICAL", "10.0"),
-    ("CVE-2017-7494",  "SambaCry",     "Samba",          "CRITICAL", "9.8"),
-    ("CVE-2014-6271",  "Shellshock",   "Bash",           "CRITICAL", "9.8"),
-    ("CVE-2021-3156",  "Baron Samedit","sudo",           "HIGH",     "7.8"),
-    ("CVE-2019-11043", "PHP-FPM RCE",  "PHP-FPM/Nginx",  "CRITICAL", "9.8"),
-    ("CVE-2019-0708",  "BlueKeep",     "Windows RDP",    "CRITICAL", "9.8"),
-    ("CVE-2017-0144",  "EternalBlue",  "Windows SMB",    "HIGH",     "8.8"),
-    ("CVE-2020-1472",  "Zerologon",    "Windows Netlogon","CRITICAL","10.0"),
+    ("CVE-2021-44228", "Log4Shell",     "Apache Log4j2",    "CRITICAL", "10.0"),
+    ("CVE-2017-7494",  "SambaCry",      "Samba",            "CRITICAL", "9.8"),
+    ("CVE-2014-6271",  "Shellshock",    "Bash",             "CRITICAL", "9.8"),
+    ("CVE-2021-3156",  "Baron Samedit", "sudo",             "HIGH",     "7.8"),
+    ("CVE-2019-11043", "PHP-FPM RCE",   "PHP-FPM/Nginx",    "CRITICAL", "9.8"),
+    ("CVE-2019-0708",  "BlueKeep",      "Windows RDP",      "CRITICAL", "9.8"),
+    ("CVE-2017-0144",  "EternalBlue",   "Windows SMB",      "HIGH",     "8.8"),
+    ("CVE-2020-1472",  "Zerologon",     "Windows Netlogon", "CRITICAL", "10.0"),
 ]
 
 
-# ── Commands ─────────────────────────────────────────────────────────────────
+# ── Commands ──────────────────────────────────────────────────────────────────
 
 @app.command()
 def lookup(
-    cve_id: str = typer.Argument(..., help="The CVE ID to look up. Example: CVE-2021-44228"),
+    cve_id: str  = typer.Argument(..., help="The CVE ID to look up. Example: CVE-2021-44228"),
     hints:  bool = typer.Option(False, "--hints", "-h", help="Show exploitation hints (coming in Phase 2)"),
 ):
     """
     Look up a CVE and display its full details.
-
-    Examples:\n
-        python cli.py lookup CVE-2021-44228\n
-        python cli.py lookup CVE-2014-6271 --hints
+    Automatically saves to your local history.
     """
 
     console.print(f"\n[dim]Fetching data for[/dim] [bold cyan]{cve_id.upper()}[/bold cyan][dim]...[/dim]\n")
 
-    # ── Fetch CVE data ────────────────────────────────────────────────────────
     try:
         cve = fetch_cve(cve_id)
+        save_cve(cve)
     except ValueError as e:
         console.print(Panel(
             f"[red]{e}[/red]",
-            title="[bold red]Error[/bold red]",
-            border_style="red",
+            title        = "[bold red]Error[/bold red]",
+            border_style = "red",
         ))
         raise typer.Exit(code=1)
     except ConnectionError as e:
         console.print(Panel(
             f"[red]{e}[/red]\n[dim]Check your internet connection and try again.[/dim]",
-            title="[bold red]Connection Error[/bold red]",
-            border_style="red",
+            title        = "[bold red]Connection Error[/bold red]",
+            border_style = "red",
         ))
         raise typer.Exit(code=1)
 
-    # ── Severity styling ──────────────────────────────────────────────────────
     sev_color = SEVERITY_COLORS.get(cve["severity"], "dim")
-    sev_label = f"[{sev_color}]{cve['severity']} ({cve['score']} / 10)[/{sev_color}]"
 
-    # ── Main info panel ───────────────────────────────────────────────────────
     info = Text()
     info.append("Published  : ", style="bold")
     info.append(f"{cve['published']}\n")
@@ -107,36 +107,36 @@ def lookup(
 
     console.print(Panel(
         info,
-        title=f"[bold cyan]{cve['id']}[/bold cyan]",
-        border_style="cyan",
-        padding=(1, 2),
+        title        = f"[bold cyan]{cve['id']}[/bold cyan]",
+        border_style = "cyan",
+        padding      = (1, 2),
     ))
 
-    # ── References table ──────────────────────────────────────────────────────
     if cve["references"]:
         table = Table(
-            title       = "References",
-            box         = box.SIMPLE,
-            show_header = False,
-            border_style= "dim",
+            title        = "References",
+            box          = box.SIMPLE,
+            show_header  = False,
+            border_style = "dim",
         )
         table.add_column("URL", style="blue underline")
         for ref in cve["references"]:
             table.add_row(ref)
         console.print(table)
 
-    # ── Hints notice ─────────────────────────────────────────────────────────
+    console.print("[dim]  [+] Saved to history. Run [bold]python cli.py history[/bold] to view.[/dim]")
+
     if hints:
         console.print(Panel(
             "[yellow]Exploitation hints are coming in Phase 2![/yellow]\n"
-            "[dim]We'll pull live PoCs from GitHub and match Metasploit modules automatically.[/dim]",
-            title="[bold yellow]Hints[/bold yellow]",
-            border_style="yellow",
-            padding=(1, 2),
+            "[dim]We will pull live PoCs from GitHub and match Metasploit modules automatically.[/dim]",
+            title        = "[bold yellow]Hints[/bold yellow]",
+            border_style = "yellow",
+            padding      = (1, 2),
         ))
     else:
         console.print(
-            "[dim]  Tip: run with [/dim][bold]--hints[/bold][dim] flag to see exploitation hints (coming soon!)[/dim]\n"
+            "[dim]  Tip: run with [bold]--hints[/bold] flag to see exploitation hints (coming soon!)[/dim]\n"
         )
 
 
@@ -147,17 +147,16 @@ def list_cves():
     """
 
     table = Table(
-        title       = "Well-Known CVEs — Practice Library",
-        box         = box.ROUNDED,
-        border_style= "cyan",
-        show_lines  = True,
+        title        = "Well-Known CVEs — Practice Library",
+        box          = box.ROUNDED,
+        border_style = "cyan",
+        show_lines   = True,
     )
-
-    table.add_column("CVE ID",      style="bold cyan",  no_wrap=True)
-    table.add_column("Nickname",    style="bold white")
-    table.add_column("Affects",     style="white")
-    table.add_column("Severity",    justify="center")
-    table.add_column("Score",       justify="center")
+    table.add_column("CVE ID",   style="bold cyan", no_wrap=True)
+    table.add_column("Nickname", style="bold white")
+    table.add_column("Affects",  style="white")
+    table.add_column("Severity", justify="center")
+    table.add_column("Score",    justify="center")
 
     for cve_id, nickname, affects, severity, score in KNOWN_CVES:
         color = SEVERITY_COLORS.get(severity, "dim")
@@ -172,10 +171,82 @@ def list_cves():
     console.print()
     console.print(table)
     console.print(
-        "\n[dim]  Use:[/dim] [bold]python cli.py lookup <CVE-ID>[/bold] "
-        "[dim]to fetch full details on any of these.\n[/dim]"
+        "\n[dim]  Use: [bold]python cli.py lookup <CVE-ID>[/bold] to fetch full details.\n[/dim]"
     )
 
+
+@app.command()
+def history():
+    """
+    Show your personal CVE research history.
+    Every CVE you look up is saved automatically.
+    """
+
+    rows  = get_history()
+    stats = get_stats()
+
+    if not rows:
+        console.print(
+            "\n[dim]  No history yet. Run [bold]python cli.py lookup CVE-2021-44228[/bold] to get started.[/dim]\n"
+        )
+        return
+
+    table = Table(
+        title        = f"Your CVE Research History ({stats['total']} total)",
+        box          = box.ROUNDED,
+        border_style = "cyan",
+        show_lines   = True,
+    )
+    table.add_column("CVE ID",      style="bold cyan", no_wrap=True)
+    table.add_column("Severity",    justify="center")
+    table.add_column("Score",       justify="center")
+    table.add_column("Published",   style="dim")
+    table.add_column("Last Lookup", style="dim")
+    table.add_column("Notes",       style="yellow")
+
+    for row in rows:
+        color = SEVERITY_COLORS.get(row["severity"], "dim")
+        table.add_row(
+            row["cve_id"],
+            f"[{color}]{row['severity']}[/{color}]",
+            f"[{color}]{row['score']}[/{color}]",
+            row["published"] or "-",
+            row["looked_up"],
+            row["notes"] if row["notes"] else "[dim]-[/dim]",
+        )
+
+    console.print()
+    console.print(table)
+    console.print(
+        f"\n[dim]  CRITICAL: {stats['critical']}  "
+        f"HIGH: {stats['high']}  "
+        f"MEDIUM: {stats['medium']}  "
+        f"LOW: {stats['low']}[/dim]\n"
+    )
+
+
+@app.command()
+def note(
+    cve_id: str = typer.Argument(..., help="CVE ID to add a note to. Example: CVE-2021-44228"),
+    text:   str = typer.Argument(..., help="Your note text in quotes."),
+):
+    """
+    Add a personal note to a CVE in your history.
+
+    Example:
+        python cli.py note CVE-2021-44228 "Practiced on THM, got RCE via User-Agent"
+    """
+
+    saved = add_note(cve_id, text)
+    if saved:
+        console.print(f"\n[green][+] Note saved for {cve_id.upper()}.[/green]\n")
+    else:
+        console.print(
+            f"\n[yellow][!] {cve_id.upper()} not in history yet. Run lookup first.[/yellow]\n"
+        )
+
+
+# ── Banner ────────────────────────────────────────────────────────────────────
 
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):
@@ -183,21 +254,20 @@ def main(ctx: typer.Context):
     CVE Scaffolder — Your personal CVE research and lab assistant.
     """
     if ctx.invoked_subcommand is None:
-        # Show banner when no command is given
         banner = Text()
-        banner.append("  CVE Scaffolder\n", style="bold cyan")
+        banner.append("  CVE Scaffolder\n",                               style="bold cyan")
         banner.append("  Your personal CVE research & lab assistant\n\n", style="dim")
         banner.append("  Commands:\n", style="bold")
         banner.append("    lookup    ", style="cyan")
-        banner.append("→  Look up a CVE by ID\n")
+        banner.append("->  Look up a CVE by ID\n")
         banner.append("    list-cves ", style="cyan")
-        banner.append("→  Show the practice library\n")
+        banner.append("->  Show the practice library\n")
+        banner.append("    history   ", style="cyan")
+        banner.append("->  View your research history\n")
+        banner.append("    note      ", style="cyan")
+        banner.append("->  Add a note to a CVE\n")
 
-        console.print(Panel(
-            banner,
-            border_style = "cyan",
-            padding      = (1, 2),
-        ))
+        console.print(Panel(banner, border_style="cyan", padding=(1, 2)))
         console.print("[dim]  Run [bold]python cli.py --help[/bold] for full usage.\n[/dim]")
 
 
