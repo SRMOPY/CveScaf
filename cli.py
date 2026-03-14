@@ -6,6 +6,7 @@ Main entry point for CVE Scaffolder.
 Usage:
     python cli.py lookup CVE-2021-44228
     python cli.py recon CVE-2021-44228
+    python cli.py resources CVE-2021-44228
     python cli.py list-cves
     python cli.py history
     python cli.py note CVE-2021-44228 "my note here"
@@ -25,6 +26,7 @@ from rich import box
 from fetcher import fetch_cve
 from db import init_db, save_cve, get_history, get_stats, add_note
 from recon import run_recon
+from resources import get_resources
 
 # Initialize database on startup
 init_db()
@@ -62,6 +64,12 @@ KNOWN_CVES = [
 ]
 
 
+# ── Helpers ───────────────────────────────────────────────────────────────────
+
+def truncate(text, length=60):
+    return (text[:length] + "...") if len(text) > length else text
+
+
 # ── Commands ──────────────────────────────────────────────────────────────────
 
 @app.command()
@@ -73,7 +81,8 @@ def lookup(
     Look up a CVE and display its full details.
     Automatically saves to your local history.
     """
-    console.print("\n[dim]Fetching data for[/dim] [bold cyan]" + cve_id.upper() + "[/bold cyan][dim]...[/dim]\n")
+    cve_upper = cve_id.upper()
+    console.print("\n[dim]Fetching data for[/dim] [bold cyan]" + cve_upper + "[/bold cyan][dim]...[/dim]\n")
 
     try:
         cve = fetch_cve(cve_id)
@@ -95,27 +104,32 @@ def lookup(
     info.append("\nDescription:\n", style="bold")
     info.append(cve["description"])
 
-    console.print(Panel(info, title="[bold cyan]" + cve["id"] + "[/bold cyan]", border_style="cyan", padding=(1, 2)))
+    console.print(Panel(
+        info,
+        title        = "[bold cyan]" + cve["id"] + "[/bold cyan]",
+        border_style = "cyan",
+        padding      = (1, 2),
+    ))
 
     if cve["references"]:
-        table = Table(title="References", box=box.SIMPLE, show_header=False, border_style="dim")
-        table.add_column("URL", style="blue underline")
+        ref_table = Table(title="References", box=box.SIMPLE, show_header=False, border_style="dim")
+        ref_table.add_column("URL", style="blue underline")
         for ref in cve["references"]:
-            table.add_row(ref)
-        console.print(table)
+            ref_table.add_row(ref)
+        console.print(ref_table)
 
     console.print("[dim]  [+] Saved to history. Run [bold]python cli.py history[/bold] to view.[/dim]")
 
     if hints:
         console.print(Panel(
             "[yellow]Exploitation hints coming in Phase 2![/yellow]\n"
-            "[dim]Run: python cli.py recon " + cve_id.upper() + " to find PoCs right now.[/dim]",
-            title="[bold yellow]Hints[/bold yellow]",
-            border_style="yellow",
-            padding=(1, 2),
+            "[dim]Run: python cli.py recon " + cve_upper + " to find PoCs right now.[/dim]",
+            title        = "[bold yellow]Hints[/bold yellow]",
+            border_style = "yellow",
+            padding      = (1, 2),
         ))
     else:
-        console.print("[dim]  Tip: run [bold]python cli.py recon " + cve_id.upper() + "[/bold] to find PoCs and exploits.\n[/dim]")
+        console.print("[dim]  Tip: run [bold]python cli.py recon " + cve_upper + "[/bold] to find PoCs and exploits.\n[/dim]")
 
 
 @app.command(name="list-cves")
@@ -142,7 +156,7 @@ def list_cves():
             nickname,
             affects,
             "[" + color + "]" + severity + "[/" + color + "]",
-            "[" + color + "]" + score + "[/" + color + "]",
+            "[" + color + "]" + score    + "[/" + color + "]",
         )
 
     console.print()
@@ -181,7 +195,7 @@ def history():
         table.add_row(
             row["cve_id"],
             "[" + color + "]" + str(row["severity"]) + "[/" + color + "]",
-            "[" + color + "]" + str(row["score"]) + "[/" + color + "]",
+            "[" + color + "]" + str(row["score"])    + "[/" + color + "]",
             row["published"] or "-",
             row["looked_up"],
             row["notes"] if row["notes"] else "[dim]-[/dim]",
@@ -191,9 +205,9 @@ def history():
     console.print(table)
     console.print(
         "\n[dim]  CRITICAL: " + str(stats["critical"]) +
-        "  HIGH: " + str(stats["high"]) +
-        "  MEDIUM: " + str(stats["medium"]) +
-        "  LOW: " + str(stats["low"]) + "[/dim]\n"
+        "  HIGH: "            + str(stats["high"])     +
+        "  MEDIUM: "          + str(stats["medium"])   +
+        "  LOW: "             + str(stats["low"])      + "[/dim]\n"
     )
 
 
@@ -222,11 +236,12 @@ def recon(
     """
     Find PoC exploits, Metasploit modules and writeups for a CVE.
     """
-    console.print("\n[dim]Running recon for[/dim] [bold cyan]" + cve_id.upper() + "[/bold cyan][dim]...[/dim]\n")
+    cve_upper = cve_id.upper()
+    console.print("\n[dim]Running recon for[/dim] [bold cyan]" + cve_upper + "[/bold cyan][dim]...[/dim]\n")
 
     results = run_recon(cve_id)
 
-    # ── Metasploit modules ────────────────────────────────────────────────────
+    # Metasploit
     if results["metasploit"]:
         msf_text = "\n".join("[green]use " + m + "[/green]" for m in results["metasploit"])
     else:
@@ -239,7 +254,7 @@ def recon(
         padding      = (1, 2),
     ))
 
-    # ── PoC repositories ──────────────────────────────────────────────────────
+    # PoCs
     console.print()
     if results["pocs"]:
         poc_table = Table(
@@ -257,15 +272,13 @@ def recon(
             if "error" in poc:
                 console.print("[yellow][!] " + poc["error"] + "[/yellow]")
             else:
-                desc = poc["description"]
-                short_desc = (desc[:60] + "...") if len(desc) > 60 else desc
-                poc_table.add_row(poc["name"], str(poc["stars"]), short_desc, poc["url"])
+                poc_table.add_row(poc["name"], str(poc["stars"]), truncate(poc["description"]), poc["url"])
 
         console.print(poc_table)
     else:
         console.print("[dim]  No PoC repositories found.[/dim]")
 
-    # ── Writeups ──────────────────────────────────────────────────────────────
+    # Writeups
     console.print()
     if results["writeups"]:
         wrt_table = Table(
@@ -279,13 +292,11 @@ def recon(
         wrt_table.add_column("URL",         style="blue underline")
 
         for w in results["writeups"]:
-            desc = w["description"]
-            short_desc = (desc[:60] + "...") if len(desc) > 60 else desc
-            wrt_table.add_row(w["name"], short_desc, w["url"])
+            wrt_table.add_row(w["name"], truncate(w["description"]), w["url"])
 
         console.print(wrt_table)
 
-    # ── Code results ──────────────────────────────────────────────────────────
+    # Code results
     if results["code_results"]:
         console.print()
         code_table = Table(
@@ -303,7 +314,92 @@ def recon(
 
         console.print(code_table)
 
-    console.print("\n[dim]  Tip: run [bold]python cli.py lookup " + cve_id.upper() + "[/bold] to see full CVE details.[/dim]\n")
+    console.print("\n[dim]  Tip: run [bold]python cli.py resources " + cve_upper + "[/bold] to find practice rooms.\n[/dim]")
+
+
+@app.command()
+def resources(
+    cve_id: str = typer.Argument(..., help="CVE ID to find resources for. Example: CVE-2021-44228"),
+):
+    """
+    Find TryHackMe rooms, HTB machines, VulnHub VMs and ExploitDB entries for a CVE.
+    """
+    cve_upper = cve_id.upper()
+    console.print("\n[dim]Finding resources for[/dim] [bold cyan]" + cve_upper + "[/bold cyan][dim]...[/dim]\n")
+
+    results = get_resources(cve_id)
+
+    if not results["found"]:
+        console.print(Panel(
+            "[yellow]No curated resources found for " + cve_upper + ".[/yellow]\n\n"
+            "[dim]Try searching manually:[/dim]\n"
+            "[blue underline]https://tryhackme.com/hacktivities?q=" + cve_upper + "[/blue underline]\n"
+            "[blue underline]https://www.exploit-db.com/search?cve=" + cve_id[4:] + "[/blue underline]\n"
+            "[blue underline]https://github.com/search?q=" + cve_upper + "[/blue underline]",
+            title        = "[bold yellow]Resources[/bold yellow]",
+            border_style = "yellow",
+            padding      = (1, 2),
+        ))
+        return
+
+    # TryHackMe
+    if results["thm"]:
+        thm_table = Table(title="TryHackMe Rooms", box=box.ROUNDED, border_style="green", show_lines=True)
+        thm_table.add_column("Room",       style="bold green")
+        thm_table.add_column("Difficulty", justify="center")
+        thm_table.add_column("Access",     justify="center")
+        thm_table.add_column("URL",        style="blue underline")
+        for room in results["thm"]:
+            access = "[green]FREE[/green]" if room["free"] else "[yellow]Subscription[/yellow]"
+            thm_table.add_row(room["name"], room["difficulty"], access, room["url"])
+        console.print(thm_table)
+        console.print()
+
+    # HackTheBox
+    if results["htb"]:
+        htb_table = Table(title="HackTheBox Machines", box=box.ROUNDED, border_style="red", show_lines=True)
+        htb_table.add_column("Machine",    style="bold red")
+        htb_table.add_column("Difficulty", justify="center")
+        htb_table.add_column("Access",     justify="center")
+        htb_table.add_column("URL",        style="blue underline")
+        for machine in results["htb"]:
+            access = "[green]FREE[/green]" if machine["free"] else "[yellow]VIP[/yellow]"
+            htb_table.add_row(machine["name"], machine["difficulty"], access, machine["url"])
+        console.print(htb_table)
+        console.print()
+
+    # VulnHub
+    if results["vulnhub"]:
+        vhl_table = Table(title="VulnHub (Always Free)", box=box.ROUNDED, border_style="cyan", show_lines=True)
+        vhl_table.add_column("VM Name", style="bold cyan")
+        vhl_table.add_column("URL",     style="blue underline")
+        for vm in results["vulnhub"]:
+            vhl_table.add_row(vm["name"], vm["url"])
+        console.print(vhl_table)
+        console.print()
+
+    # ExploitDB
+    if results["exploitdb"]:
+        edb_table = Table(title="ExploitDB Entries", box=box.ROUNDED, border_style="yellow", show_lines=True)
+        edb_table.add_column("EDB ID", style="bold yellow", no_wrap=True)
+        edb_table.add_column("Title",  style="white")
+        edb_table.add_column("URL",    style="blue underline")
+        for edb in results["exploitdb"]:
+            edb_table.add_row("EDB-" + edb["id"], edb["title"], edb["url"])
+        console.print(edb_table)
+        console.print()
+
+    # YouTube
+    if results["youtube"]:
+        yt_table = Table(title="YouTube Walkthroughs", box=box.ROUNDED, border_style="red", show_lines=True)
+        yt_table.add_column("Title", style="bold white")
+        yt_table.add_column("URL",   style="blue underline")
+        for yt in results["youtube"]:
+            yt_table.add_row(yt["title"], yt["url"])
+        console.print(yt_table)
+        console.print()
+
+    console.print("[dim]  Tip: run [bold]python cli.py recon " + cve_upper + "[/bold] to find live PoCs on GitHub.\n[/dim]")
 
 
 # ── Banner ────────────────────────────────────────────────────────────────────
@@ -322,6 +418,8 @@ def main(ctx: typer.Context):
         banner.append("->  Look up a CVE by ID\n")
         banner.append("    recon     ", style="cyan")
         banner.append("->  Find PoCs, Metasploit modules and writeups\n")
+        banner.append("    resources ", style="cyan")
+        banner.append("->  Find THM rooms, HTB machines, VulnHub VMs\n")
         banner.append("    list-cves ", style="cyan")
         banner.append("->  Show the practice library\n")
         banner.append("    history   ", style="cyan")
