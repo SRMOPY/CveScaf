@@ -7,6 +7,7 @@ Usage:
     python cli.py lookup CVE-2021-44228
     python cli.py recon CVE-2021-44228
     python cli.py resources CVE-2021-44228
+    python cli.py note-gen CVE-2021-44228
     python cli.py list-cves
     python cli.py history
     python cli.py note CVE-2021-44228 "my note here"
@@ -27,6 +28,7 @@ from fetcher import fetch_cve
 from db import init_db, save_cve, get_history, get_stats, add_note
 from recon import run_recon
 from resources import get_resources
+from notes import generate_note
 
 # Initialize database on startup
 init_db()
@@ -241,7 +243,6 @@ def recon(
 
     results = run_recon(cve_id)
 
-    # Metasploit
     if results["metasploit"]:
         msf_text = "\n".join("[green]use " + m + "[/green]" for m in results["metasploit"])
     else:
@@ -254,7 +255,6 @@ def recon(
         padding      = (1, 2),
     ))
 
-    # PoCs
     console.print()
     if results["pocs"]:
         poc_table = Table(
@@ -273,12 +273,10 @@ def recon(
                 console.print("[yellow][!] " + poc["error"] + "[/yellow]")
             else:
                 poc_table.add_row(poc["name"], str(poc["stars"]), truncate(poc["description"]), poc["url"])
-
         console.print(poc_table)
     else:
         console.print("[dim]  No PoC repositories found.[/dim]")
 
-    # Writeups
     console.print()
     if results["writeups"]:
         wrt_table = Table(
@@ -293,10 +291,8 @@ def recon(
 
         for w in results["writeups"]:
             wrt_table.add_row(w["name"], truncate(w["description"]), w["url"])
-
         console.print(wrt_table)
 
-    # Code results
     if results["code_results"]:
         console.print()
         code_table = Table(
@@ -311,7 +307,6 @@ def recon(
 
         for c in results["code_results"]:
             code_table.add_row(c["name"], c["repo"], c["url"])
-
         console.print(code_table)
 
     console.print("\n[dim]  Tip: run [bold]python cli.py resources " + cve_upper + "[/bold] to find practice rooms.\n[/dim]")
@@ -342,7 +337,6 @@ def resources(
         ))
         return
 
-    # TryHackMe
     if results["thm"]:
         thm_table = Table(title="TryHackMe Rooms", box=box.ROUNDED, border_style="green", show_lines=True)
         thm_table.add_column("Room",       style="bold green")
@@ -355,7 +349,6 @@ def resources(
         console.print(thm_table)
         console.print()
 
-    # HackTheBox
     if results["htb"]:
         htb_table = Table(title="HackTheBox Machines", box=box.ROUNDED, border_style="red", show_lines=True)
         htb_table.add_column("Machine",    style="bold red")
@@ -368,7 +361,6 @@ def resources(
         console.print(htb_table)
         console.print()
 
-    # VulnHub
     if results["vulnhub"]:
         vhl_table = Table(title="VulnHub (Always Free)", box=box.ROUNDED, border_style="cyan", show_lines=True)
         vhl_table.add_column("VM Name", style="bold cyan")
@@ -378,7 +370,6 @@ def resources(
         console.print(vhl_table)
         console.print()
 
-    # ExploitDB
     if results["exploitdb"]:
         edb_table = Table(title="ExploitDB Entries", box=box.ROUNDED, border_style="yellow", show_lines=True)
         edb_table.add_column("EDB ID", style="bold yellow", no_wrap=True)
@@ -389,7 +380,6 @@ def resources(
         console.print(edb_table)
         console.print()
 
-    # YouTube
     if results["youtube"]:
         yt_table = Table(title="YouTube Walkthroughs", box=box.ROUNDED, border_style="red", show_lines=True)
         yt_table.add_column("Title", style="bold white")
@@ -399,7 +389,49 @@ def resources(
         console.print(yt_table)
         console.print()
 
-    console.print("[dim]  Tip: run [bold]python cli.py recon " + cve_upper + "[/bold] to find live PoCs on GitHub.\n[/dim]")
+    console.print("[dim]  Tip: run [bold]python cli.py note-gen " + cve_upper + "[/bold] to generate markdown notes.\n[/dim]")
+
+
+@app.command(name="note-gen")
+def note_gen(
+    cve_id: str = typer.Argument(..., help="CVE ID to generate notes for. Example: CVE-2021-44228"),
+):
+    """
+    Generate a structured markdown notes template for a CVE.
+    Saved to the /notes folder in your project directory.
+
+    Example:
+        python cli.py note-gen CVE-2021-44228
+    """
+    cve_upper = cve_id.upper()
+    console.print("\n[dim]Generating notes for[/dim] [bold cyan]" + cve_upper + "[/bold cyan][dim]...[/dim]\n")
+
+    try:
+        console.print("[dim]  Fetching CVE data...[/dim]")
+        cve = fetch_cve(cve_id)
+
+        console.print("[dim]  Running recon...[/dim]")
+        recon_results = run_recon(cve_id)
+
+        console.print("[dim]  Finding resources...[/dim]")
+        resource_results = get_resources(cve_id)
+
+        console.print("[dim]  Writing notes file...[/dim]\n")
+        path = generate_note(cve, recon_results, resource_results)
+
+    except (ValueError, ConnectionError) as e:
+        console.print(Panel(str(e), title="[bold red]Error[/bold red]", border_style="red"))
+        raise typer.Exit(code=1)
+
+    console.print(Panel(
+        "[green]Notes generated successfully![/green]\n\n"
+        "[dim]Saved to:[/dim] [bold]" + path + "[/bold]\n\n"
+        "[dim]Open it in VS Code, Obsidian, or any markdown editor.\n"
+        "Fill in the 'My Notes' section as you practice.[/dim]",
+        title        = "[bold green]Done[/bold green]",
+        border_style = "green",
+        padding      = (1, 2),
+    ))
 
 
 # ── Banner ────────────────────────────────────────────────────────────────────
@@ -420,12 +452,14 @@ def main(ctx: typer.Context):
         banner.append("->  Find PoCs, Metasploit modules and writeups\n")
         banner.append("    resources ", style="cyan")
         banner.append("->  Find THM rooms, HTB machines, VulnHub VMs\n")
+        banner.append("    note-gen  ", style="cyan")
+        banner.append("->  Generate markdown notes for a CVE\n")
         banner.append("    list-cves ", style="cyan")
         banner.append("->  Show the practice library\n")
         banner.append("    history   ", style="cyan")
         banner.append("->  View your research history\n")
         banner.append("    note      ", style="cyan")
-        banner.append("->  Add a note to a CVE\n")
+        banner.append("->  Add a quick note to a CVE\n")
 
         console.print(Panel(banner, border_style="cyan", padding=(1, 2)))
         console.print("[dim]  Run [bold]python cli.py --help[/bold] for full usage.\n[/dim]")

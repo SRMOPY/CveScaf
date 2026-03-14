@@ -12,6 +12,9 @@ env/
 *.db
 *.sqlite3
 
+# Personal CVE notes (local only)
+notes/
+
 # OS files
 .DS_Store
 Thumbs.db
