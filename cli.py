@@ -18,6 +18,7 @@ Requirements:
 """
 
 import typer
+import pyfiglet
 from rich.console import Console
 from rich.panel import Panel
 from rich.text import Text
@@ -36,8 +37,8 @@ init_db()
 # ── App setup ─────────────────────────────────────────────────────────────────
 
 app = typer.Typer(
-    name           = "cvescaffold",
-    help           = "CVE-to-Lab Scaffolder — Look up CVEs and build your attack lab.",
+    name           = "cvescaf",
+    help           = "CveScaf — Look up CVEs, find exploits, and build your attack lab.",
     add_completion = False,
 )
 console = Console()
@@ -439,11 +440,12 @@ def note_gen(
 @app.callback(invoke_without_command=True)
 def main(ctx: typer.Context):
     """
-    CVE Scaffolder — Your personal CVE research and lab assistant.
+    CveScaf — Your personal CVE research and lab assistant.
     """
     if ctx.invoked_subcommand is None:
+        ascii_art = pyfiglet.figlet_format("CveScaf", font="slant")
         banner = Text()
-        banner.append("  CVE Scaffolder\n",                               style="bold cyan")
+        banner.append(ascii_art, style="bold cyan")
         banner.append("  Your personal CVE research & lab assistant\n\n", style="dim")
         banner.append("  Commands:\n", style="bold")
         banner.append("    lookup    ", style="cyan")
