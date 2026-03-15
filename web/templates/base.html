@@ -41,7 +41,7 @@
     // Loading bar on navigation
     const bar = document.getElementById("loading-bar");
     document.querySelectorAll("a").forEach(a => {
-        if (a.href && !a.href.startsWith("#") && !a.target) {
+        if (a.href && !a.href.startsWith("#") && a.target !== "_blank") {
             a.addEventListener("click", () => {
                 bar.classList.add("active");
             });
