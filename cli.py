@@ -25,11 +25,11 @@ from rich.text import Text
 from rich.table import Table
 from rich import box
 
-from fetcher import fetch_cve
-from db import init_db, save_cve, get_history, get_stats, add_note
-from recon import run_recon
-from resources import get_resources
-from notes import generate_note
+from core.fetcher import fetch_cve
+from core.db import init_db, save_cve, get_history, get_stats, add_note
+from core.recon import run_recon
+from core.resources import get_resources
+from core.notes import generate_note
 
 # Initialize database on startup
 init_db()

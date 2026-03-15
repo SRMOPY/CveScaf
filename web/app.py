@@ -16,11 +16,11 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from flask import Flask, render_template, request, jsonify, redirect, url_for
-from fetcher import fetch_cve
-from recon import run_recon
-from resources import get_resources
-from notes import generate_note
-from db import init_db, save_cve, get_history, get_stats, add_note, get_cve_from_history
+from core.fetcher import fetch_cve
+from core.recon import run_recon
+from core.resources import get_resources
+from core.notes import generate_note
+from core.db import init_db, save_cve, get_history, get_stats, add_note, get_cve_from_history
 
 app = Flask(__name__)
 init_db()
