@@ -4,13 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CveScaf {% block title %}{% endblock %}</title>
-    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
+<div class="loading-bar" id="loading-bar"></div>
 <div class="scanlines"></div>
 <div class="noise"></div>
 
@@ -37,5 +37,36 @@
 </footer>
 
 {% block scripts %}{% endblock %}
+<script>
+    // Loading bar on navigation
+    const bar = document.getElementById("loading-bar");
+    document.querySelectorAll("a").forEach(a => {
+        if (a.href && !a.href.startsWith("#") && !a.target) {
+            a.addEventListener("click", () => {
+                bar.classList.add("active");
+            });
+        }
+    });
+
+    // Stop loading bar when page loads
+    window.addEventListener("load", () => {
+        bar.classList.remove("active");
+        bar.style.width = "100%";
+        setTimeout(() => { bar.style.width = "0%"; }, 300);
+    });
+
+    // Add spinner to search form submit
+    const searchForms = document.querySelectorAll(".search-form");
+    searchForms.forEach(form => {
+        form.addEventListener("submit", () => {
+            const btn = form.querySelector(".btn");
+            if (btn) {
+                btn.innerHTML = '<span class="spinner"></span> Searching...';
+                btn.disabled = true;
+            }
+            bar.classList.add("active");
+        });
+    });
+</script>
 </body>
 </html>

@@ -623,3 +623,300 @@ footer a { color: var(--red); }
     .nav-links { gap: 1rem; }
     main { padding: 1.5rem 1rem; }
 }
+
+/* ── Animations ──────────────────────────────────────────────────────────────── */
+
+/* Keyframes */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.4; }
+}
+
+@keyframes scanMove {
+    from { transform: translateY(-100%); }
+    to   { transform: translateY(100vh); }
+}
+
+@keyframes borderGlow {
+    0%, 100% { border-color: var(--border); }
+    50%       { border-color: var(--red-dim); }
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0; }
+}
+
+/* ── Page load ───────────────────────────────────────────────────────────────── */
+main {
+    animation: fadeIn 0.4s ease;
+}
+
+nav {
+    animation: slideDown 0.3s ease;
+}
+
+/* ── Cards animate in ────────────────────────────────────────────────────────── */
+.card {
+    animation: slideUp 0.4s ease both;
+}
+
+.stat-card {
+    animation: slideUp 0.4s ease both;
+}
+
+.stat-card:nth-child(1) { animation-delay: 0.05s; }
+.stat-card:nth-child(2) { animation-delay: 0.10s; }
+.stat-card:nth-child(3) { animation-delay: 0.15s; }
+.stat-card:nth-child(4) { animation-delay: 0.20s; }
+
+.poc-card {
+    animation: slideUp 0.4s ease both;
+}
+
+.poc-card:nth-child(1) { animation-delay: 0.05s; }
+.poc-card:nth-child(2) { animation-delay: 0.10s; }
+.poc-card:nth-child(3) { animation-delay: 0.15s; }
+.poc-card:nth-child(4) { animation-delay: 0.20s; }
+.poc-card:nth-child(5) { animation-delay: 0.25s; }
+
+.lib-card {
+    animation: slideUp 0.4s ease both;
+}
+
+.lib-card:nth-child(1) { animation-delay: 0.05s; }
+.lib-card:nth-child(2) { animation-delay: 0.10s; }
+.lib-card:nth-child(3) { animation-delay: 0.15s; }
+.lib-card:nth-child(4) { animation-delay: 0.20s; }
+.lib-card:nth-child(5) { animation-delay: 0.25s; }
+.lib-card:nth-child(6) { animation-delay: 0.30s; }
+.lib-card:nth-child(7) { animation-delay: 0.35s; }
+.lib-card:nth-child(8) { animation-delay: 0.40s; }
+
+/* ── Table rows stagger in ───────────────────────────────────────────────────── */
+.data-table tbody tr {
+    animation: slideUp 0.3s ease both;
+}
+
+.data-table tbody tr:nth-child(1)  { animation-delay: 0.05s; }
+.data-table tbody tr:nth-child(2)  { animation-delay: 0.10s; }
+.data-table tbody tr:nth-child(3)  { animation-delay: 0.15s; }
+.data-table tbody tr:nth-child(4)  { animation-delay: 0.20s; }
+.data-table tbody tr:nth-child(5)  { animation-delay: 0.25s; }
+.data-table tbody tr:nth-child(6)  { animation-delay: 0.30s; }
+.data-table tbody tr:nth-child(7)  { animation-delay: 0.35s; }
+.data-table tbody tr:nth-child(8)  { animation-delay: 0.40s; }
+.data-table tbody tr:nth-child(9)  { animation-delay: 0.45s; }
+.data-table tbody tr:nth-child(10) { animation-delay: 0.50s; }
+
+/* ── Hero animate in ─────────────────────────────────────────────────────────── */
+.hero {
+    animation: slideUp 0.5s ease both;
+}
+
+.hero-title {
+    animation: slideUp 0.5s ease both;
+}
+
+.hero-sub {
+    animation: slideUp 0.5s ease 0.1s both;
+}
+
+/* ── Search form ─────────────────────────────────────────────────────────────── */
+.search-form {
+    animation: slideUp 0.5s ease 0.15s both;
+}
+
+/* ── Nav brand cursor blink ──────────────────────────────────────────────────── */
+.nav-brand::after {
+    content:    '_';
+    color:      var(--red);
+    animation:  blink 1s step-end infinite;
+}
+
+/* ── Button animations ───────────────────────────────────────────────────────── */
+.btn {
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.btn:hover {
+    box-shadow: 0 0 12px var(--red-glow);
+    transform:  translateY(-1px);
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn-outline:hover {
+    box-shadow: 0 0 12px var(--red-glow);
+}
+
+/* ── Stat number count-up feel ───────────────────────────────────────────────── */
+.stat-number {
+    transition: color 0.3s;
+}
+
+.stat-card:hover .stat-number {
+    color: #ff6666;
+}
+
+/* ── CVE ID link hover ───────────────────────────────────────────────────────── */
+.history-cve-id {
+    transition: color 0.2s, letter-spacing 0.2s;
+}
+
+.history-cve-id:hover {
+    letter-spacing: 0.05em;
+    text-decoration: none;
+}
+
+/* ── Description box slide in ────────────────────────────────────────────────── */
+.description-box {
+    animation: slideUp 0.5s ease 0.2s both;
+}
+
+/* ── Panel animate in ────────────────────────────────────────────────────────── */
+.msf-box {
+    animation: slideUp 0.4s ease 0.1s both;
+}
+
+/* ── Loading spinner ─────────────────────────────────────────────────────────── */
+.spinner {
+    display:       inline-block;
+    width:         16px;
+    height:        16px;
+    border:        2px solid var(--border);
+    border-top:    2px solid var(--red);
+    border-radius: 50%;
+    animation:     spin 0.7s linear infinite;
+    vertical-align:middle;
+    margin-right:  0.5rem;
+}
+
+/* ── Loading overlay for CVE fetch ──────────────────────────────────────────── */
+.loading-bar {
+    position:   fixed;
+    top:        0;
+    left:       0;
+    height:     2px;
+    background: var(--red);
+    width:      0%;
+    transition: width 0.3s ease;
+    z-index:    9999;
+}
+
+.loading-bar.active {
+    animation: loadBar 1.5s ease infinite;
+}
+
+@keyframes loadBar {
+    0%   { width: 0%;   left: 0; }
+    50%  { width: 70%;  left: 0; }
+    100% { width: 0%;   left: 100%; }
+}
+
+/* ── Resource list items stagger ─────────────────────────────────────────────── */
+.resource-list li {
+    animation: slideUp 0.3s ease both;
+}
+
+.resource-list li:nth-child(1) { animation-delay: 0.05s; }
+.resource-list li:nth-child(2) { animation-delay: 0.10s; }
+.resource-list li:nth-child(3) { animation-delay: 0.15s; }
+.resource-list li:nth-child(4) { animation-delay: 0.20s; }
+.resource-list li:nth-child(5) { animation-delay: 0.25s; }
+.resource-list li:nth-child(6) { animation-delay: 0.30s; }
+.resource-list li:nth-child(7) { animation-delay: 0.35s; }
+.resource-list li:nth-child(8) { animation-delay: 0.40s; }
+
+/* ── Scanning line effect on hero ────────────────────────────────────────────── */
+.hero::before {
+    content:    '';
+    position:   absolute;
+    left:       0;
+    width:      100%;
+    height:     1px;
+    background: linear-gradient(90deg, transparent, var(--red), transparent);
+    animation:  scanMove 3s linear infinite;
+    opacity:    0.3;
+    pointer-events: none;
+}
+
+.hero {
+    position: relative;
+    overflow: hidden;
+}
+
+/* ── Link underline fixes ────────────────────────────────────────────────────── */
+
+/* Remove all underlines globally */
+a { text-decoration: none; }
+a:hover { text-decoration: none; }
+
+/* All clickable links glow red on hover instead */
+a:hover {
+    color: #ff6666;
+    text-shadow: 0 0 8px rgba(255, 34, 34, 0.4);
+    transition: color 0.2s, text-shadow 0.2s;
+}
+
+/* Reference URLs in CVE detail — cyan glow */
+a[href^="http"]:hover {
+    color: #33ddff;
+    text-shadow: 0 0 8px rgba(0, 200, 255, 0.3);
+}
+
+/* CVE ID links in tables — grow slightly */
+.history-cve-id:hover {
+    color: #ff6666;
+    text-shadow: 0 0 8px rgba(255, 34, 34, 0.5);
+    transform: scale(1.03);
+    display: inline-block;
+}
+
+/* Nav links — no underline, just color + glow */
+.nav-links a:hover {
+    text-shadow: 0 0 8px rgba(255, 34, 34, 0.5);
+    text-decoration: none;
+}
+
+/* Library cards — no underline */
+.lib-card:hover { text-decoration: none; }
+.lib-card:hover .lib-nickname {
+    color: #ff6666;
+    text-shadow: 0 0 8px rgba(255, 34, 34, 0.3);
+}
+
+/* Footer links */
+footer a:hover {
+    text-shadow: 0 0 8px rgba(255, 34, 34, 0.5);
+}
+
+/* Resource list links */
+.resource-list a:hover {
+    text-shadow: 0 0 8px rgba(255, 34, 34, 0.4);
+}
+
+/* PoC view button — already a .btn, just make sure no underline */
+.poc-card a { text-decoration: none; }
