@@ -114,18 +114,20 @@ $ python cli.py history
 
 ```
 CveScaf/
-├── cli.py            — entry point, all commands live here
-├── fetcher.py        — pulls CVE data from NVD API
-├── recon.py          — searches GitHub for PoCs and writeups
-├── resources.py      — maps CVEs to THM, HTB, VulnHub, ExploitDB
-├── db.py             — local SQLite history and notes
-├── notes.py          — generates markdown notes templates
+├── core/                  — backend logic
+│   ├── fetcher.py         — pulls CVE data from NVD API
+│   ├── recon.py           — searches GitHub for PoCs and writeups
+│   ├── resources.py       — maps CVEs to THM, HTB, VulnHub, ExploitDB
+│   ├── db.py              — local SQLite history and notes
+│   └── notes.py           — generates markdown notes templates
+├── web/                   — web UI
+│   ├── app.py             — Flask backend
+│   ├── templates/         — HTML pages
+│   └── static/            — CSS and assets
+├── screenshots/           — project screenshots
+├── cli.py                 — entry point, all commands live here
 ├── requirements.txt
-├── .gitignore
-└── web/
-    ├── app.py        — Flask backend
-    ├── templates/    — HTML pages
-    └── static/       — CSS and assets
+└── .gitignore
 ```
 
 ---
