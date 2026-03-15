@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CveScaf {% block title %}{% endblock %}</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<div class="scanlines"></div>
+<div class="noise"></div>
+
+<nav>
+    <a href="/" class="nav-brand">
+        <span class="brand-bracket">[</span>
+        CveScaf
+        <span class="brand-bracket">]</span>
+    </a>
+    <div class="nav-links">
+        <a href="/lookup"  {% if request.path == '/lookup' %}class="active"{% endif %}>LOOKUP</a>
+        <a href="/library" {% if request.path == '/library' %}class="active"{% endif %}>LIBRARY</a>
+        <a href="/history" {% if request.path == '/history' %}class="active"{% endif %}>HISTORY</a>
+    </div>
+</nav>
+
+<main>
+    {% block content %}{% endblock %}
+</main>
+
+<footer>
+    <span>CveScaf — For authorized practice only</span>
+    <span>Built by <a href="https://github.com/SRMOPY" target="_blank">SRMOPY</a></span>
+</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>
