@@ -76,7 +76,7 @@ No API keys, no accounts, no config files.
 
 ## Web UI
 
-A local dashboard built with Flask. Includes all CLI features in a black/red dark theme.
+A local dashboard built with Flask. Includes all CLI features.
 
 ```bash
 python web/app.py
@@ -127,20 +127,6 @@ CveScaf/
     ├── templates/    — HTML pages
     └── static/       — CSS and assets
 ```
-
----
-
-## Roadmap
-
-- [x] CVE lookup from NVD
-- [x] GitHub PoC search
-- [x] Metasploit module matching
-- [x] THM / HTB / VulnHub / ExploitDB resource finder
-- [x] Local research history (SQLite)
-- [x] Markdown notes generator
-- [x] Web UI dashboard
-- [ ] Docker lab spin-up for supported CVEs
-- [ ] Export research report as PDF
 
 ---
 
