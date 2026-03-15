@@ -8,11 +8,17 @@ Built for offensive security learners who are tired of spending 30 minutes setti
 
 ## Screenshots
 
-> Coming soon — add yours here after running the tool!
-
+**Dashboard**
 ![Dashboard](screenshots/dashboard.png)
+
+**CVE Detail — Log4Shell**
 ![CVE Detail](screenshots/cve-detail.png)
+
+**Practice Library**
 ![Library](screenshots/library.png)
+
+**Research History**
+![History](screenshots/history.png)
 
 ---
 
