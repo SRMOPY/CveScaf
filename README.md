@@ -1,8 +1,18 @@
 # CveScaf
 
-A CLI tool for looking up CVEs, finding real PoC exploits, and generating structured practice notes — all from your terminal.
+A CLI tool for looking up CVEs, finding real PoC exploits, and generating structured practice notes — all from your terminal. Also comes with a local web UI dashboard.
 
 Built for offensive security learners who are tired of spending 30 minutes setting up before they can actually practice anything.
+
+---
+
+## Screenshots
+
+> Coming soon — add yours here after running the tool!
+
+![Dashboard](screenshots/dashboard.png)
+![CVE Detail](screenshots/cve-detail.png)
+![Library](screenshots/library.png)
 
 ---
 
@@ -16,6 +26,7 @@ You give it a CVE ID. It gives you:
 - TryHackMe rooms, HackTheBox machines, VulnHub VMs, and ExploitDB entries
 - A structured markdown notes file ready to fill in as you practice
 - A local history of every CVE you've researched
+- A web UI dashboard to browse everything visually
 
 ```
 $ python cli.py lookup CVE-2021-44228
@@ -39,11 +50,11 @@ cd CveScaf
 pip install -r requirements.txt
 ```
 
-That's it. No API keys, no accounts, no config files.
+No API keys, no accounts, no config files.
 
 ---
 
-## Commands
+## CLI Commands
 
 | Command | What it does |
 |--------|-------------|
@@ -54,6 +65,17 @@ That's it. No API keys, no accounts, no config files.
 | `list-cves` | Show a table of well-known CVEs to practice on |
 | `history` | View every CVE you've looked up |
 | `note <CVE> "text"` | Add a personal note to a CVE in your history |
+
+---
+
+## Web UI
+
+A local dashboard built with Flask. Includes all CLI features in a black/red dark theme.
+
+```bash
+python web/app.py
+# Open http://localhost:5000
+```
 
 ---
 
@@ -74,7 +96,7 @@ $ python cli.py note-gen CVE-2021-44228
 # Saved to: notes/CVE_2021_44228.md
 
 # Add a note after practicing
-$ python cli.py note CVE-2021-44228 "Got RCE via User-Agent header, used marshalsec for LDAP"
+$ python cli.py note CVE-2021-44228 "Got RCE via User-Agent, used marshalsec for LDAP"
 
 # Check your history
 $ python cli.py history
@@ -93,7 +115,11 @@ CveScaf/
 ├── db.py             — local SQLite history and notes
 ├── notes.py          — generates markdown notes templates
 ├── requirements.txt
-└── .gitignore
+├── .gitignore
+└── web/
+    ├── app.py        — Flask backend
+    ├── templates/    — HTML pages
+    └── static/       — CSS and assets
 ```
 
 ---
@@ -106,7 +132,7 @@ CveScaf/
 - [x] THM / HTB / VulnHub / ExploitDB resource finder
 - [x] Local research history (SQLite)
 - [x] Markdown notes generator
-- [ ] Web UI dashboard
+- [x] Web UI dashboard
 - [ ] Docker lab spin-up for supported CVEs
 - [ ] Export research report as PDF
 
