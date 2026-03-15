@@ -21,6 +21,8 @@ from core.recon import run_recon
 from core.resources import get_resources
 from core.notes import generate_note
 from core.db import init_db, save_cve, get_history, get_stats, add_note, get_cve_from_history
+from core.searcher import search_cves
+from core.reporter import generate_report
 
 app = Flask(__name__)
 init_db()
@@ -69,11 +71,23 @@ def cve_detail(cve_id):
 
     return render_template(
         "cve.html",
-        cve       = cve,
-        recon     = recon_data,
-        resources = resource_data,
+        cve        = cve,
+        recon      = recon_data,
+        resources  = resource_data,
         saved_note = dict(entry)["notes"] if entry else "",
     )
+
+
+@app.route("/search")
+def search():
+    keyword = request.args.get("q", "").strip()
+    if not keyword:
+        return render_template("search.html", results=[], keyword="", error=None)
+    try:
+        results = search_cves(keyword, limit=15)
+        return render_template("search.html", results=results, keyword=keyword, error=None)
+    except (ValueError, ConnectionError) as e:
+        return render_template("search.html", results=[], keyword=keyword, error=str(e))
 
 
 @app.route("/history")
@@ -104,6 +118,18 @@ def api_note_gen(cve_id):
         recon     = run_recon(cve_id)
         resources = get_resources(cve_id)
         path      = generate_note(cve, recon, resources)
+        return jsonify({"success": True, "path": path})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route("/api/report/<cve_id>")
+def api_report(cve_id):
+    try:
+        cve       = fetch_cve(cve_id)
+        recon     = run_recon(cve_id)
+        resources = get_resources(cve_id)
+        path      = generate_report(cve, recon, resources)
         return jsonify({"success": True, "path": path})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)})

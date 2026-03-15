@@ -12,6 +12,9 @@ env/
 *.db
 *.sqlite3
 
+# Generated PDF reports (local only)
+reports/
+
 # Personal CVE notes (local only)
 notes/
 
@@ -33,5 +36,5 @@ dist/
 build/
 *.egg-info/
 
-# Environment variables (never commit secrets!)
+# Environment variables
 .env

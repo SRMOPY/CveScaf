@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}— Search{% endblock %}
+
+{% block content %}
+<h1>CVE Search</h1>
+<p style="color:var(--text-dim); margin-bottom:2rem">Search by keyword — type a technology, vendor, or vulnerability type.</p>
+
+<form class="search-form" action="/search" method="GET">
+    <input
+        class="search-input"
+        type="text"
+        name="q"
+        value="{{ keyword }}"
+        placeholder="log4j, windows smb, apache rce..."
+        autocomplete="off"
+        spellcheck="false"
+        autofocus
+    >
+    <button class="btn" type="submit">SEARCH</button>
+</form>
+
+{% if error %}
+<div class="error-box">{{ error }}</div>
+{% endif %}
+
+{% if results %}
+<div class="card" style="margin-top:1.5rem">
+    <div class="section-header">
+        <h2>Results for "{{ keyword }}" ({{ results|length }} found)</h2>
+    </div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>CVE ID</th>
+                <th>Severity</th>
+                <th>Score</th>
+                <th>Published</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in results %}
+            <tr style="cursor:pointer" onclick="window.location='/cve/{{ r.id }}'">
+                <td><a class="history-cve-id" href="/cve/{{ r.id }}">{{ r.id }}</a></td>
+                <td><span class="badge badge-{{ r.severity | lower }}">{{ r.severity }}</span></td>
+                <td style="font-family:var(--font-mono)">{{ r.score }}</td>
+                <td style="color:var(--text-dim); font-family:var(--font-mono); font-size:0.85rem">{{ r.published }}</td>
+                <td style="color:var(--text-dim); font-size:0.85rem">
+                    {{ r.description[:100] }}{% if r.description|length > 100 %}...{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% elif keyword and not error %}
+<div class="card" style="margin-top:1.5rem">
+    <p style="color:var(--text-dim); text-align:center; padding:2rem">
+        No CVEs found for "{{ keyword }}". Try a different keyword.
+    </p>
+</div>
+{% endif %}
+
+{% endblock %}
