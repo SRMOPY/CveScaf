@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}— History{% endblock %}
+
+{% block content %}
+<h1>Research History</h1>
+<p style="color:var(--text-dim); margin-bottom:2rem">Every CVE you've looked up, automatically saved.</p>
+
+<div class="stats-grid" style="margin-bottom:2rem">
+    <div class="stat-card">
+        <span class="stat-number">{{ stats.total }}</span>
+        <span class="stat-label">Total</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number" style="color:#ff4444">{{ stats.critical }}</span>
+        <span class="stat-label">Critical</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number" style="color:#ff6400">{{ stats.high }}</span>
+        <span class="stat-label">High</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number" style="color:#ffcc00">{{ stats.medium }}</span>
+        <span class="stat-label">Medium</span>
+    </div>
+</div>
+
+{% if history %}
+<div class="card">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>CVE ID</th>
+                <th>Severity</th>
+                <th>Score</th>
+                <th>Published</th>
+                <th>Last Lookup</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in history %}
+            <tr>
+                <td><a class="history-cve-id" href="/cve/{{ row.cve_id }}">{{ row.cve_id }}</a></td>
+                <td><span class="badge badge-{{ row.severity | lower }}">{{ row.severity }}</span></td>
+                <td style="font-family:var(--font-mono)">{{ row.score }}</td>
+                <td style="color:var(--text-dim); font-family:var(--font-mono); font-size:0.85rem">{{ row.published or '—' }}</td>
+                <td style="color:var(--text-dim); font-family:var(--font-mono); font-size:0.85rem">{{ row.looked_up }}</td>
+                <td style="color:var(--text-dim); font-size:0.85rem">{{ row.notes or '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="card">
+    <p style="color:var(--text-dim); text-align:center; padding:2rem">
+        No history yet. <a href="/lookup">Look up a CVE</a> to get started.
+    </p>
+</div>
+{% endif %}
+{% endblock %}

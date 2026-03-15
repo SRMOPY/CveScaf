@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}— Library{% endblock %}
+
+{% block content %}
+<h1>CVE Library</h1>
+<p style="color:var(--text-dim); margin-bottom:2rem">Well-known CVEs to practice on. Click any card to load full details.</p>
+
+<div class="library-grid">
+    {% for cve in cves %}
+    <a class="lib-card" href="/cve/{{ cve.id }}">
+        <div class="lib-nickname">{{ cve.nickname }}</div>
+        <div class="lib-cve-id">{{ cve.id }}</div>
+        <div class="lib-footer">
+            <span class="lib-affects">{{ cve.affects }}</span>
+            <span class="badge badge-{{ cve.severity | lower }}">{{ cve.severity }} {{ cve.score }}</span>
+        </div>
+    </a>
+    {% endfor %}
+</div>
+{% endblock %}

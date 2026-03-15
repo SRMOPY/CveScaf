@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}— Lookup{% endblock %}
+
+{% block content %}
+<h1>CVE Lookup</h1>
+<p style="color:var(--text-dim); margin-bottom:2rem">Enter a CVE ID to fetch full details, find PoCs, and discover practice resources.</p>
+
+{% if error %}
+<div class="error-box">{{ error }}</div>
+{% endif %}
+
+<form class="search-form" action="/lookup" method="POST">
+    <input
+        class="search-input"
+        type="text"
+        name="cve_id"
+        placeholder="CVE-2021-44228"
+        autocomplete="off"
+        spellcheck="false"
+        autofocus
+    >
+    <button class="btn" type="submit">LOOKUP</button>
+</form>
+
+<div class="card" style="margin-top:2rem">
+    <div class="section-header"><h2>Quick Examples</h2></div>
+    <div style="display:flex; flex-wrap:wrap; gap:0.75rem">
+        <a href="/cve/CVE-2021-44228" class="btn btn-outline btn-sm">Log4Shell</a>
+        <a href="/cve/CVE-2017-0144"  class="btn btn-outline btn-sm">EternalBlue</a>
+        <a href="/cve/CVE-2014-6271"  class="btn btn-outline btn-sm">Shellshock</a>
+        <a href="/cve/CVE-2020-1472"  class="btn btn-outline btn-sm">Zerologon</a>
+        <a href="/cve/CVE-2021-3156"  class="btn btn-outline btn-sm">Baron Samedit</a>
+    </div>
+</div>
+{% endblock %}

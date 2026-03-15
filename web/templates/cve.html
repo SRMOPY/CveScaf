@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+{% block title %}— {{ cve.id }}{% endblock %}
+
+{% block content %}
+
+<!-- Header -->
+<div class="cve-header">
+    <div class="cve-id">{{ cve.id }}</div>
+    <div class="cve-meta">
+        <span class="cve-meta-item">Severity: <span>
+            <span class="badge badge-{{ cve.severity | lower }}">{{ cve.severity }} {{ cve.score }}/10</span>
+        </span></span>
+        <span class="cve-meta-item">Published: <span>{{ cve.published }}</span></span>
+    </div>
+    <div style="display:flex; gap:0.75rem; margin-top:1rem; flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="generateNotes()">GENERATE NOTES</button>
+        <a href="/lookup" class="btn btn-outline btn-sm">NEW LOOKUP</a>
+    </div>
+</div>
+
+<!-- Description -->
+<div class="section-header"><h2>Description</h2></div>
+<div class="description-box">{{ cve.description }}</div>
+
+<!-- References -->
+{% if cve.references %}
+<div class="card">
+    <div class="section-header"><h2>References</h2></div>
+    <ul style="list-style:none; display:flex; flex-direction:column; gap:0.5rem">
+        {% for ref in cve.references %}
+        <li style="font-family:var(--font-mono); font-size:0.85rem">
+            <a href="{{ ref }}" target="_blank" style="color:var(--cyan)">{{ ref }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<hr class="divider">
+
+<!-- Metasploit -->
+<div class="section-header"><h2>Metasploit Modules</h2></div>
+<div class="msf-box" style="margin-bottom:2rem">
+    {% if recon.metasploit %}
+        {% for mod in recon.metasploit %}
+        <div class="msf-cmd">use {{ mod }}</div>
+        <div style="color:var(--text-dim); font-size:0.85rem; margin-bottom:0.5rem">set RHOSTS &lt;TARGET_IP&gt;</div>
+        {% endfor %}
+    {% else %}
+        <div class="msf-none">No known Metasploit module for this CVE.</div>
+    {% endif %}
+</div>
+
+<!-- PoCs -->
+<div class="section-header"><h2>PoC Exploits (GitHub)</h2></div>
+{% if recon.pocs %}
+<div class="poc-grid" style="margin-bottom:2rem">
+    {% for poc in recon.pocs %}
+    {% if 'error' not in poc %}
+    <div class="poc-card">
+        <div class="poc-name">{{ poc.name }}</div>
+        <div class="poc-desc">{{ poc.description[:80] }}{% if poc.description|length > 80 %}...{% endif %}</div>
+        <div class="poc-footer">
+            <span class="poc-stars">★ {{ poc.stars }}</span>
+            <a href="{{ poc.url }}" target="_blank" class="btn btn-outline btn-sm">VIEW</a>
+        </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+</div>
+{% else %}
+<p style="color:var(--text-dim); margin-bottom:2rem">No PoC repositories found.</p>
+{% endif %}
+
+<hr class="divider">
+
+<!-- Resources -->
+<div class="section-header"><h2>Practice Resources</h2></div>
+{% if resources.found %}
+<div class="card" style="margin-bottom:1.5rem">
+    <ul class="resource-list">
+        {% for room in resources.thm %}
+        <li>
+            <span class="resource-platform platform-thm">THM</span>
+            <a href="{{ room.url }}" target="_blank">{{ room.name }}</a>
+            <span style="color:var(--text-dim); font-size:0.8rem">{{ room.difficulty }}</span>
+            {% if room.free %}<span class="free-tag">[FREE]</span>{% else %}<span class="paid-tag">[Sub]</span>{% endif %}
+        </li>
+        {% endfor %}
+        {% for m in resources.htb %}
+        <li>
+            <span class="resource-platform platform-htb">HTB</span>
+            <a href="{{ m.url }}" target="_blank">{{ m.name }}</a>
+            <span style="color:var(--text-dim); font-size:0.8rem">{{ m.difficulty }}</span>
+            {% if m.free %}<span class="free-tag">[FREE]</span>{% else %}<span class="paid-tag">[VIP]</span>{% endif %}
+        </li>
+        {% endfor %}
+        {% for vm in resources.vulnhub %}
+        <li>
+            <span class="resource-platform platform-vulnhub">VHL</span>
+            <a href="{{ vm.url }}" target="_blank">{{ vm.name }}</a>
+            <span class="free-tag">[FREE]</span>
+        </li>
+        {% endfor %}
+        {% for edb in resources.exploitdb %}
+        <li>
+            <span class="resource-platform platform-edb">EDB</span>
+            <a href="{{ edb.url }}" target="_blank">EDB-{{ edb.id }} — {{ edb.title }}</a>
+        </li>
+        {% endfor %}
+        {% for yt in resources.youtube %}
+        <li>
+            <span class="resource-platform platform-yt">YT</span>
+            <a href="{{ yt.url }}" target="_blank">{{ yt.title }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% else %}
+<p style="color:var(--text-dim); margin-bottom:1.5rem">No curated resources found.
+    <a href="https://tryhackme.com/hacktivities?q={{ cve.id }}" target="_blank">Search THM</a> |
+    <a href="https://www.exploit-db.com/search?cve={{ cve.id[4:] }}" target="_blank">Search ExploitDB</a>
+</p>
+{% endif %}
+
+<hr class="divider">
+
+<!-- Personal Notes -->
+<div class="section-header"><h2>My Notes</h2></div>
+<div class="card">
+    <textarea class="notes-area" id="notes-input" placeholder="Add your notes here — what worked, what didn't, flags captured...">{{ saved_note }}</textarea>
+    <div style="margin-top:0.75rem; display:flex; gap:0.75rem">
+        <button class="btn btn-sm" onclick="saveNote()">SAVE NOTE</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const CVE_ID = "{{ cve.id }}";
+
+    function saveNote() {
+        const note = document.getElementById("notes-input").value;
+        fetch("/api/note", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ cve_id: CVE_ID, note: note })
+        })
+        .then(r => r.json())
+        .then(data => {
+            showToast(data.success ? "Note saved!" : "Failed to save note.");
+        });
+    }
+
+    function generateNotes() {
+        showToast("Generating notes file...");
+        fetch("/api/note-gen/" + CVE_ID)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                showToast("Notes saved to: " + data.path);
+            } else {
+                showToast("Error: " + data.error);
+            }
+        });
+    }
+
+    function showToast(msg) {
+        const t = document.getElementById("toast");
+        t.textContent = msg;
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 3000);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}— Dashboard{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="hero-title">Cve<span class="accent">Scaf</span></div>
+    <div class="hero-sub">CVE research & exploit lab assistant</div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <span class="stat-number">{{ stats.total }}</span>
+        <span class="stat-label">CVEs Researched</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number" style="color:#ff4444">{{ stats.critical }}</span>
+        <span class="stat-label">Critical</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number" style="color:#ff6400">{{ stats.high }}</span>
+        <span class="stat-label">High</span>
+    </div>
+    <div class="stat-card">
+        <span class="stat-number" style="color:#ffcc00">{{ stats.medium }}</span>
+        <span class="stat-label">Medium</span>
+    </div>
+</div>
+
+<form class="search-form" action="/lookup" method="POST">
+    <input
+        class="search-input"
+        type="text"
+        name="cve_id"
+        placeholder="CVE-2021-44228"
+        autocomplete="off"
+        spellcheck="false"
+    >
+    <button class="btn" type="submit">SEARCH</button>
+</form>
+
+{% if history %}
+<div class="card">
+    <div class="section-header"><h2>Recent Research</h2></div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th>CVE ID</th>
+                <th>Severity</th>
+                <th>Score</th>
+                <th>Last Lookup</th>
+                <th>Notes</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in history %}
+            <tr>
+                <td>
+                    <a class="history-cve-id" href="/cve/{{ row.cve_id }}">{{ row.cve_id }}</a>
+                </td>
+                <td>
+                    <span class="badge badge-{{ row.severity | lower }}">{{ row.severity }}</span>
+                </td>
+                <td style="font-family:var(--font-mono)">{{ row.score }}</td>
+                <td style="color:var(--text-dim); font-family:var(--font-mono); font-size:0.85rem">{{ row.looked_up }}</td>
+                <td style="color:var(--text-dim); font-size:0.85rem">{{ row.notes or '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}
